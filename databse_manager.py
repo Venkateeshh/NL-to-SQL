@@ -9,6 +9,7 @@ class DatabaseManager:
     
     def __init__(self, db_path: str = "db/soil_pollution.db"):
         self.db_path = db_path
+        self.db_dir = "db"
         self._ensure_db_exists()
     
     def _ensure_db_exists(self) -> None:
@@ -18,6 +19,25 @@ class DatabaseManager:
         # Create sample table if database doesn't exist
         if not os.path.exists(self.db_path):
             self._create_sample_database()
+    
+    def get_available_databases(self) -> List[str]:
+        """Get list of available database files in the db directory."""
+        if not os.path.exists(self.db_dir):
+            return []
+        
+        db_files = []
+        for file in os.listdir(self.db_dir):
+            if file.endswith(('.db', '.sqlite', '.sqlite3')):
+                db_files.append(file)
+        return sorted(db_files)
+    
+    def switch_database(self, db_name: str) -> bool:
+        """Switch to a different database."""
+        new_path = os.path.join(self.db_dir, db_name)
+        if os.path.exists(new_path):
+            self.db_path = new_path
+            return True
+        return False
     
     
     def execute_query(self, sql_query: str) -> Optional[List[Dict]]:

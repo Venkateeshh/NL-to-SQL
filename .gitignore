@@ -13,4 +13,4 @@ wheels/
 venv/
 
 db
-memory.json
+memory/
