@@ -3,6 +3,7 @@ import streamlit as st
 from custom_db import CustomDatabase
 from databse_manager import DatabaseManager
 from datetime import datetime
+from explain_query import QueryExplainer
 from gemini_class import GeminiAssistant
 from memory_management import MemoryManager
 from sql_validation import SQLValidator
@@ -29,6 +30,18 @@ def initialize_session_state():
         st.session_state.custom_db = CustomDatabase()
     if 'selected_db' not in st.session_state:
         st.session_state.selected_db = 'soil_pollution.db'
+    if 'query_explainer' not in st.session_state:
+        st.session_state.query_explainer = QueryExplainer()
+    if 'last_sql_query' not in st.session_state:
+        st.session_state.last_sql_query = None
+    if 'last_result' not in st.session_state:
+        st.session_state.last_result = None
+    if 'last_summary' not in st.session_state:
+        st.session_state.last_summary = None
+    if 'last_question' not in st.session_state:
+        st.session_state.last_question = None
+    if 'query_explanation' not in st.session_state:
+        st.session_state.query_explanation = None
 
 
 def main():
@@ -233,6 +246,11 @@ def main():
             # Display generated SQL
             st.subheader("📝 Generated SQL Query")
             st.code(sql_query, language="sql")
+            
+            # Store the last SQL query for explanation
+            st.session_state.last_sql_query = sql_query
+            st.session_state.last_question = user_question
+            st.session_state.query_explanation = None  # Clear previous explanation
         
         with st.spinner("⚡ Executing query..."):
             # Execute query
@@ -245,11 +263,17 @@ def main():
             if not result:
                 st.warning("No results found")
                 summary = "No data found for the given query."
+                st.session_state.last_result = None
+                st.session_state.last_summary = summary
             else:
                 # Generate summary
                 summary = st.session_state.assistant.generate_summary(
                     user_question, result, context
                 )
+                
+                # Store in session state
+                st.session_state.last_result = result
+                st.session_state.last_summary = summary
                 
                 # Display results
                 st.subheader("📊 Query Results")
@@ -276,6 +300,44 @@ def main():
                 "timestamp": datetime.now(),
                 "summary": summary
             })
+    
+    # Display last results if available (persists across reruns)
+    elif st.session_state.last_sql_query:
+        st.subheader("📝 Generated SQL Query")
+        st.code(st.session_state.last_sql_query, language="sql")
+        
+        if st.session_state.last_result:
+            st.subheader("📊 Query Results")
+            df = pd.DataFrame(st.session_state.last_result)
+            st.dataframe(df, use_container_width=True, width="stretch")
+            
+            st.subheader("💬 Natural Language Summary")
+            st.markdown(f'<div class="success-box">{st.session_state.last_summary}</div>', unsafe_allow_html=True)
+            
+            # Download option
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Results as CSV",
+                data=csv,
+                file_name=f"query_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
+        elif st.session_state.last_summary:
+            st.warning("No results found")
+    
+    # Explain Query button - outside the query execution block
+    if st.session_state.last_sql_query:
+        col_explain, col_spacer = st.columns([1, 3])
+        with col_explain:
+            if st.button("🔎 Explain Query", type="secondary", use_container_width=True):
+                with st.spinner("🧠 Generating explanation..."):
+                    explanation = st.session_state.query_explainer.explain_query(st.session_state.last_sql_query)
+                    st.session_state.query_explanation = explanation
+        
+        # Display explanation if available
+        if st.session_state.query_explanation:
+            st.subheader("📖 Query Explanation")
+            st.markdown(st.session_state.query_explanation)
     
     # Clear button action
     if clear_button:
