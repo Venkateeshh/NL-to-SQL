@@ -18,6 +18,7 @@ A Streamlit-based application that converts natural language questions into SQL 
 
 - **Natural Language Queries**: Ask questions in plain English and get SQL queries automatically generated
 - **AI-Powered**: Uses Google Gemini AI for intelligent SQL generation and result summarization
+- **Query Explanation**: Get plain English explanations of generated SQL queries
 - **Multi-Database Support**: Switch between multiple databases seamlessly
 - **Database-Specific Prompts**: Custom AI prompts tailored for each database type
 - **Database-Specific Memory**: Separate conversation history for each database
@@ -36,6 +37,7 @@ NL-SQL/
 ├── custom_db.py            # Custom database upload/creation handler
 ├── databse_manager.py      # Database operations manager
 ├── gemini_class.py         # Gemini AI integration
+├── explain_query.py        # SQL query explainer
 ├── memory_management.py    # Conversation memory handler
 ├── prompt_manager.py       # Database-specific prompt loader
 ├── sql_validation.py       # SQL query validation
@@ -115,7 +117,14 @@ NL-SQL/
    - "What is the average value by category?"
    - "List all unique countries in the dataset"
 
-5. **Manage databases** via the sidebar:
+5. **View results**: The system displays:
+   - Generated SQL query
+   - Query results in a table
+   - AI-generated natural language summary
+
+6. **Explain Query**: Click the "🔎 Explain Query" button to get a plain English breakdown of what the SQL query does
+
+7. **Manage databases** via the sidebar:
    - Upload existing SQLite databases
    - Create new databases from CSV files
 
@@ -153,6 +162,12 @@ Handles Google Gemini AI integration through the `GeminiAssistant` class:
 - `build_sql_prompt()`: Constructs prompts with schema context and guidelines
 - `generate_sql()`: Converts natural language to SQL queries
 - `generate_summary()`: Creates human-readable summaries of query results
+
+### `explain_query.py`
+Provides SQL query explanations through the `QueryExplainer` class:
+- `explain_query()`: Generates plain English explanations of SQL queries using Gemini AI
+- Breaks down each part of the query (SELECT, FROM, WHERE, JOIN, GROUP BY, etc.)
+- Uses bullet points for clear, easy-to-understand explanations
 
 ### `prompt_manager.py`
 Manages database-specific prompts through the `PromptManager` class:
@@ -212,7 +227,9 @@ Project configuration and dependencies:
 
 6. **Summary**: Gemini AI generates a natural language summary of the results
 
-7. **Memory Storage**: The interaction is saved for future context
+7. **Query Explanation** (Optional): User can click "Explain Query" to get a detailed breakdown of the SQL in plain English
+
+8. **Memory Storage**: The interaction is saved for future context
 
 ## 🛡️ Security Features
 
